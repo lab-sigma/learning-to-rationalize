@@ -1,5 +1,5 @@
 # Simulation program for the experiments of STOC 2022 submission
-### *Multi-Agent  Learning for  Iterative Dominance Elimination: \\ Formal Barriers and New Algorithms*
+### *Multi-Agent  Learning for  Iterative Dominance Elimination: Formal Barriers and New Algorithms*
 
 ![DIR(20,40) animation](DIR(20,40).gif)
 
