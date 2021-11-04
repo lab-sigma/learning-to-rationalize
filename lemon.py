@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
 	parser.add_argument('--std', type=float, default=0, help='noise std. in feedback')
 	parser.add_argument('--iterations', type=int, default=100, help='number of rounds to play')
-	parser.add_argument('--strategy', type=int, help='player strategy' + describe(player_strategy_names))
+	parser.add_argument('--strategy', type=int, help='player strategy' + describe(strategy_choice_names))
 	parser.add_argument('--num_sellers', type=int, help='number of sellers ' )
 	parser.add_argument('--num_actions', type=int, help='number of buyers ')
 	parser.add_argument('--unit', type=float, default=1, help='discretized unit')
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 	samples = args.samples
 
 	env_name = "lemon3"
-	strategy_name = player_strategy_names[strategy]
+	strategy_name = strategy_choice_names[strategy]
 
 
 	j = 0
@@ -189,17 +189,20 @@ if __name__ == '__main__':
 			print("load env at " + env_dir)
 			f.close()
 
+
+		player_module = __import__('player')
+	    
 		if strategy != 4:
-			players = [player(strategy, num_actions, iterations) ]
-			players.extend( [player(strategy, 2, iterations) for i in range(num_sellers) ] )
+			players = [getattr(player_module, strategy_name)(num_actions, iterations) ]
+			players.extend( [getattr(player_module, strategy_name)(2, iterations) for i in range(num_sellers) ] )
 		else:
 			a0 = 50
 			b0 = 0.5
 			a1 = 50
 			b1 = 0.5
-			players = [DEplayer(num_actions, a0, b0) ]
-			players.extend( [DEplayer(2, a1, b1) for i in range(num_sellers) ] )
-			print(f'beta = {players[0].a}, b = {players[0].b}, beta = {players[1].a}, b = {players[1].b}' )
+			players = [getattr(player_module, strategy_name)(num_actions, iterations, a0, b0) ]
+			players.extend( [getattr(player_module, strategy_name)(2, iterations, a1, b1) for i in range(num_sellers) ] )
+			print(f'beta = {players[0].beta}, b = {players[0].b}, beta = {players[1].beta}, b = {players[1].b}' )
 	    
 		i = find_latest(f'{log_dir}/', '.log')
 		log_dir = f'{log_dir}/{i}'
@@ -216,7 +219,7 @@ if __name__ == '__main__':
 		for t in range(1, iterations+1):
 
 			for i, p in enumerate(players): 
-				actions[i] = p.act( None )
+				actions[i] = p.act()
 				action_probs[i] = p.action_prob[1]
 
 			rewards, supply, price, avg_quality = env.feedback( actions )

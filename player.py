@@ -150,15 +150,15 @@ class EXP3RVU:
 
 ### EXP3-DH
 class EXP3DH:
-	def __init__(self, num_actions, num_iterations=None):
+	def __init__(self, num_actions, num_iterations=None, beta=None, b=0.2):
 		self.num_actions = num_actions
 		### not essential, but use higher precision just in case     
 		self.loss = np.zeros(num_actions, dtype=np.float128)
 		self.eps = 0
 		self.action_prob = np.ones(num_actions, dtype=np.float128) / num_actions
 		self.t = 0
-		self.beta = 2 * num_actions #or 1 for second price auction
-		self.b = 0.2
+		self.beta = 2 * num_actions if not beta else beta #or 1 for second price auction
+		self.b = b
 
 	def __str__(self):
 		return f"EXP3-DH\nbeta={self.beta}\nb={self.b}\naction_prob={self.action_prob}\n"
