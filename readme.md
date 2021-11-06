@@ -1,4 +1,4 @@
-# Simulation program for the experiments of STOC 2022 submission
+# Simulation program for the task of learning to rationalize
 ### *Multi-Agent  Learning for  Iterative Dominance Elimination: Formal Barriers and New Algorithms*
 
 ![DIR(20,40) animation](DIR(20,40).gif)
