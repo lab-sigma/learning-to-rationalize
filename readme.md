@@ -1,9 +1,11 @@
 # Simulation program for the task of learning to rationalize
 ### *Multi-Agent  Learning for  Iterative Dominance Elimination: Formal Barriers and New Algorithms*
-
+<!-- 
 ![DIR(20,40) animation](DIR(20,40).gif)
 
-![DIR(10,20) animations](DIR(10,20).gif)
+![DIR(10,20) animations](DIR(10,20).gif) -->
+
+DIR(15,30) animation](DIR(20,40).gif)
 
 ```
 ### get help on how to specify simulation parameter
