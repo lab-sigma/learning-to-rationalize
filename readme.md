@@ -5,7 +5,7 @@
 
 ![DIR(10,20) animations](DIR(10,20).gif) -->
 
-DIR(15,30) animation](DIR(20,40).gif)
+![DIR(15,30) animation](DIR(15,30).gif)
 
 ```
 ### get help on how to specify simulation parameter
