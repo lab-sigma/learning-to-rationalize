@@ -17,10 +17,13 @@ player_num = 2
 env = DIR(num_actions=action_num, std = .1, num_players=2)
 #env = SPA(num_actions=action_num, std = .1, num_players=player_num, unit = .05, minx = 0)
 #env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
+#env = FPA(num_actions=action_num, std = .1, num_players=player_num, unit = .05, minx = 0)
 agents = []
 
 for i in range(player_num):
+  # agents.append(EXP3(action_num))
   agents.append(EXP3DH(action_num))
+  # agents.append(MWUMB(action_num))
 
 for t in range(num_iterations):
   actions = []
