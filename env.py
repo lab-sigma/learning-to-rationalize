@@ -97,10 +97,15 @@ class FPA(base_env):
 		price = np.max(bids)
 				
 		winners = (bids == price)
+		nonwinners = (bids != price)
 		num_winners = np.count_nonzero(winners)
 
-		noise = np.random.randn(self.num_players) * self.std
+		# bidders = (bids != 0)   # make the trajectories cyclic, 0 = abstain from bidding
+		bidders = np.ones(self.num_players)  # make penalty uniform, no one abstains from bidding
+
+		# noise = np.random.randn(self.num_players) * self.std
+		noise = np.random.randn() * self.std
 		### noisy feedback for the winner
-		rewards = ((self.values - price) * winners / num_winners) + noise
+		rewards = (((self.values + noise - price) / num_winners) * winners) - (self.unit * bidders)
 
 		return rewards
