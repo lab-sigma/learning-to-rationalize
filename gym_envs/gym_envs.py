@@ -159,3 +159,45 @@ class Lemon(gym.Env):
 
   def render(self):
     pass
+
+
+# repeated first price auction
+class FPA(gym.Env):
+  def __init__(self, std, num_actions, num_players, unit, minx, values=None):
+    self.state = None
+    self.std = std
+    self.num_players = num_players
+    self.minx = minx
+    self.unit = unit
+    self.num_actions = num_actions
+    self.action = spaces.Discrete(num_actions)
+    ### randomly sample values for players and wlog rank players by its value
+    self.values = minx + np.sort( np.random.choice(num_actions, num_players) if (values is None) else values )*unit
+    self.profile_history = []
+
+  def transform_action(self, actions):
+    return self.minx + actions * self.unit  ### to linearly map an action id to a real value
+
+  def step(self, actions):
+    self.profile_history.append(actions)
+    taken_actions = []
+    for i in range(len(actions)):
+      taken_actions.append(np.random.choice(range(self.num_actions), p=actions[i]))
+    taken_actions = np.asarray(taken_actions)
+    bids = self.transform_action(taken_actions)
+    price = np.max(bids)
+
+    winners = (bids == price)
+    num_winners = np.count_nonzero(winners)
+
+    noise = np.random.randn(self.num_players) * self.std
+    ### noisy feedback for the winner
+    rewards = (((self.values - price) / num_winners) + noise) * winners
+
+    return rewards, taken_actions
+
+  def render(self):
+    pass
+
+  def reset(self):
+    pass
