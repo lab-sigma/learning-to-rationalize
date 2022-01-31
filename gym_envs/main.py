@@ -21,7 +21,9 @@ env = DIR(num_actions=action_num, std = .1, num_players=2)
 agents = []
 
 for i in range(player_num):
+  # agents.append(EXP3(action_num))
   agents.append(EXP3DH(action_num))
+  # agents.append(MWUMB(action_num))
 
 for t in range(num_iterations):
   actions = []
