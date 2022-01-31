@@ -11,7 +11,7 @@ from matplotlib.animation import FuncAnimation
 from gym_envs import DIR, SPA, Lemon
 from agents import EXP3DH
 
-num_iterations = 1000
+num_iterations = 100000
 action_num = 5
 player_num = 2
 env = DIR(num_actions=action_num, std = .1, num_players=2)
@@ -32,3 +32,5 @@ for t in range(num_iterations):
 
 for i in range(player_num):
   print("Agent ", i, "'s final distribution over actions: ", agents[i].action_prob.astype(float))
+
+env.render()

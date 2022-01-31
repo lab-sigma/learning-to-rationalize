@@ -6,30 +6,58 @@ import scipy
 from scipy.optimize import minimize_scalar, fsolve
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+import networkx as nx
+from matplotlib.animation import FuncAnimation, PillowWriter
+import sys
+matplotlib.use('agg')
 
-def general_render(de_hist, game_name, num_players, num_actions, std, steps):
 
-  fig, ax1 = plt.subplots()
+def general_render(env):
+  L0 = 2*action_num - 1
 
-  line1, = ax1.plot([], [], linestyle = '-', color='tab:blue', label="EXP3-DH",  marker='o')
+  PoE = []
 
-  ax1.set_title("EXP3-DH")#y=title_pos, fontsize=title_fontsize, fontweight=fontweight)
+  for round in env.profile_history:
+    round_PoE = 0;
+    for strategy in round:
+      for i in range(len(strategy)):
+        delta_i = None
+        if env.name == "DIR":
+          delta_i = 2*env.mapping[i]-1
+        round_PoE += strategy[i]*(delta_i/L0)
+    PoE.append(round_PoE/len(round))
 
-  txt = fig.text(0.45, 0.9, s="placeholder")
+  fig = plt.figure()
+  ax = plt.axes(xlim=(0, len(env.profile_history)), ylim=(0, 1))
 
-  def update(i):
-    j = max(0, i-100)
-    line1.set_data(de_hist[0][j:i], de_hist[1][j:i])
-    txt.set_text(f"$t={i+1}^3$")
-    return ax1
+  ax.set_xlabel('Round Number')
+  ax.set_ylabel('Progress of Elimination')
+  if env.name == "DIR":
+    ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.c})')
+  else:
+    ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.num_players})')
 
-  fig.suptitle(f'Learning Dynamics in {game_name}({player_num}, {action_num}) w/ noise {std}')
+  line, = ax.plot([], [], lw = 1)
 
-  anim = FuncAnimation(fig, update, frames=np.arange(steps), interval=50)
-  anim.save('learning_dynamics' + '.gif', dpi=80, writer='ffmpeg')
+  def init():
+    line.set_data([], [])
+    return line,
+
+  def animate(i):
+    x = range(0, i)
+    y = PoE[:i]
+    line.set_data(x, y)
+    return line,
+
+  anim = FuncAnimation(fig, animate, init_func=init, frames=range(0, len(env.profile_history), 1000), interval=1, blit=True)
+
+  anim.save('DIR.gif', writer=PillowWriter(fps=10))
+
+  plt.close()
 
 class DIR(gym.Env):
+  metadata = {'render.modes': ['human']}
+
   def __init__(self, std, num_players, num_actions, c = None):
     self.state = None
     self.std = std
@@ -41,6 +69,7 @@ class DIR(gym.Env):
     self.mapping = np.random.permutation(num_actions)
     print("Equilibrium action: " + str(self.mapping[num_actions-1]))
     self.profile_history = []
+    self.name = "DIR"
 
   def step(self, actions):
     i = np.random.choice(range(self.num_actions), p=actions[0])
@@ -60,16 +89,17 @@ class DIR(gym.Env):
       rewards[1] = -self.c/self.rho
     rewards += np.random.randn(2) * self.std
     done = bool(actions[0][self.mapping[self.num_actions-1]] == 1 or actions[1][self.mapping[self.num_actions-1]] == 1)
-    return rewards, taken_actions, done
-
+    #self.render()
+    return rewards, taken_actions
 
   def reset(self):
     pass
 
   def render(self):
-    pass
+    general_render(self)
 
 class SPA(gym.Env):
+  metadata = {'render.modes': ['human']}
   def __init__(self, std, num_actions, num_players, unit, minx):
     self.state = None
     self.std = std
@@ -81,6 +111,7 @@ class SPA(gym.Env):
     ### randomly sample values for players and wlog rank players by its value 
     self.values = minx + np.sort( np.random.choice(num_actions, num_players) )*unit
     self.profile_history = []
+    env.name = "SPA"
   
   def transform_action(self, actions):
     return self.minx + actions*self.unit ### to linearly map an action id to a real value
@@ -109,6 +140,7 @@ class SPA(gym.Env):
     pass
 
 class Lemon(gym.Env):
+  metadata = {'render.modes': ['human']}
   def __init__(self, std, num_sellers, num_actions, unit, minx):
     self.std = std
     self.unit = unit
@@ -120,6 +152,7 @@ class Lemon(gym.Env):
     self.welfare_factor = 1.5
     self.listing_cost = 3
     self.profile_history = []
+    env.name = "Lemon"
 
   def transform(self, x):
     return x*self.unit + self.minx
