@@ -184,15 +184,23 @@ class FPA(gym.Env):
     for i in range(len(actions)):
       taken_actions.append(np.random.choice(range(self.num_actions), p=actions[i]))
     taken_actions = np.asarray(taken_actions)
-    bids = self.transform_action(taken_actions)
+
+    bids = self.transform_action(actions)
+    # w = np.argmax(bids)
+    # bids[w] = -1 ## first prize auction, we don't need to find second highest
     price = np.max(bids)
 
     winners = (bids == price)
+    nonwinners = (bids != price)
     num_winners = np.count_nonzero(winners)
 
-    noise = np.random.randn(self.num_players) * self.std
+    # bidders = (bids != 0)   # make the trajectories cyclic, 0 = abstain from bidding
+    bidders = np.ones(self.num_players)  # make penalty uniform, no one abstains from bidding
+
+    # noise = np.random.randn(self.num_players) * self.std
+    noise = np.random.randn() * self.std
     ### noisy feedback for the winner
-    rewards = (((self.values - price) / num_winners) + noise) * winners
+    rewards = (((self.values + noise - price) / num_winners) * winners) - (self.unit * bidders)
 
     return rewards, taken_actions
 
