@@ -191,7 +191,7 @@ class FPA(gym.Env):
     price = np.max(bids)
 
     winners = (bids == price)
-    nonwinners = (bids != price)
+    # nonwinners = (bids != price)
     num_winners = np.count_nonzero(winners)
 
     # bidders = (bids != 0)   # make the trajectories cyclic, 0 = abstain from bidding
