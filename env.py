@@ -1,7 +1,7 @@
 import numpy as np
 
 
-env_choice_names = ['DIR', 'SPA', 'FPA']
+env_choice_names = ['DIR', 'SPA' ]
 
 
 class base_env:
@@ -52,10 +52,10 @@ class DIR(base_env):
 
 ### the repeated second price auction game with bandit feedback
 class SPA(base_env):
-	def __init__(self, std, num_actions, num_players, unit, minx, values=None):
+	def __init__(self, std, num_actions, num_players, unit, minx):
 		base_env.__init__(self, std, num_actions, num_players, unit, minx)
 		### randomly sample values for players and wlog rank players by its value 
-		self.values = minx + np.sort( np.random.choice(num_actions, num_players) if (values is None) else values )*unit
+		self.values = minx + np.sort( np.random.choice(num_actions, num_players) )*unit
 
 	def __str__(self):
 		return f"SPA({self.num_players}, {self.num_actions}) with noise std. {self.std}\nValues {self.values}"
@@ -77,35 +77,3 @@ class SPA(base_env):
 		return rewards
 
 
-### the repeated first price auction game with bandit feedback
-class FPA(base_env):
-	def __init__(self, std, num_actions, num_players, unit, minx, values=None):
-		base_env.__init__(self, std, num_actions, num_players, unit, minx)
-		### randomly sample values for players and wlog rank players by its value
-		self.values = minx + np.sort( np.random.choice(num_actions, num_players) if (values is None) else values )*unit
-
-	def __str__(self):
-		return f"FPA({self.num_players}, {self.num_actions}) with noise std. {self.std}\nValues {self.values}"
-
-	def transform_action(self, actions):
-		return self.minx + actions*self.unit ### to linearly map an action id to a real value
-
-	def feedback(self, actions):
-		bids = self.transform_action(actions)
-		# w = np.argmax(bids)
-		# bids[w] = -1 ## first prize auction, we don't need to find second highest
-		price = np.max(bids)
-				
-		winners = (bids == price)
-		# nonwinners = (bids != price)
-		num_winners = np.count_nonzero(winners)
-
-		# bidders = (bids != 0)   # make the trajectories cyclic, 0 = abstain from bidding
-		bidders = np.ones(self.num_players)  # make penalty uniform, no one abstains from bidding
-
-		# noise = np.random.randn(self.num_players) * self.std
-		noise = np.random.randn() * self.std
-		### noisy feedback for the winner
-		rewards = (((self.values + noise - price) / num_winners) * winners) - (self.unit * bidders)
-
-		return rewards
