@@ -4,7 +4,7 @@ import scipy
 from scipy.optimize import minimize_scalar, fsolve
 
 
-strategy_choice_names = ['EXP3', 'EXP3P', 'EXP3Pswap', 'EXP3RVU', 'EXP3DH', 'OMDLogBarrier', 'MWU', 'MWUMB']
+strategy_choice_names = ['EXP3', 'EXP3P', 'EXP3Pswap', 'EXP3RVU', 'EXP3DH', 'OMDLogBarrier']
 
 ### EXP3 
 class EXP3:
@@ -153,9 +153,9 @@ class EXP3DH:
 	def __init__(self, num_actions, num_iterations=None, beta=None, b=0.2):
 		self.num_actions = num_actions
 		### not essential, but use higher precision just in case     
-		self.loss = np.zeros(num_actions, dtype=np.longdouble)
+		self.loss = np.zeros(num_actions, dtype=np.float128)
 		self.eps = 0
-		self.action_prob = np.ones(num_actions, dtype=np.longdouble) / num_actions
+		self.action_prob = np.ones(num_actions, dtype=np.float128) / num_actions
 		self.t = 0
 		self.beta = 2 * num_actions if not beta else beta #or 1 for second price auction
 		self.b = b
@@ -237,73 +237,8 @@ class OMDLogBarrier:
 				self.rho[i] = 2. /self.belief[i]
 				self.eta[i] = self.eta[i] * self.kappa				 
 
-### MWU, as traditionally used with diminishing influence
-class MWU:
-	def __init__(self, num_actions, num_iterations=None, beta=None, b=0.2):
-		self.num_actions = num_actions
-		### not essential, but use higher precision just in case
-		self.weights = np.ones(num_actions, dtype=np.longdouble)
-		self.total_weight = num_actions
-		self.eps = 1  # epsilon t, parameter that's decreasing with time. O(1/sqt(t))
-		self.action_prob = np.ones(num_actions, dtype=np.longdouble) / num_actions
-		self.t = 0
-
-	def __str__(self):
-		return f"MWU\naction_prob={self.action_prob}\n"
-
-	def act(self):
-		action, = np.random.choice( self.num_actions, 1, p=self.action_prob.astype(float) )
-
-		return action
-
-	def feedback(self, action, reward, state=None):
-		self.t += 1
-
-		self.eps = 1/((self.t+1) ** .5)
-
-		estimatedReward = reward / self.action_prob[action]
-
-		# Traditional MWU
-		exp_update = np.exp( self.eps * estimatedReward )
-		self.total_weight -= self.weights[action]
-		self.weights[action] *= exp_update
-		self.total_weight += self.weights[action]
-
-		self.action_prob = ((1.0 - self.eps) * self.weights / self.total_weight) + (self.eps / self.num_actions)
 
 
-### MWU-MB, as defined in Deng, et al to be Mean-Based
-class MWUMB:
-	def __init__(self, num_actions, num_iterations=None, beta=None, b=0.2):
-		self.num_actions = num_actions
-		### not essential, but use higher precision just in case
-		self.weights = np.ones(num_actions, dtype=np.longdouble)
-		self.total_weight = num_actions
-		self.total_reward = np.zeros(num_actions, dtype=np.longdouble)
-		self.eps = 1  # epsilon t, parameter that's decreasing with time. O(1/sqt(t))
-		self.action_prob = np.ones(num_actions, dtype=np.longdouble) / num_actions
-		self.t = 0
-
-	def __str__(self):
-		return f"MWU\naction_prob={self.action_prob}\n"
-
-	def act(self):
-		action, = np.random.choice( self.num_actions, 1, p=self.action_prob.astype(float) )
-
-		return action
-
-	def feedback(self, action, reward, state=None):
-		self.t += 1
-
-		self.eps = 1/((self.t+1) ** .5)
-		estimatedReward = reward / self.action_prob[action]
-		
-		# Deng, et al
-		self.total_reward[action] += estimatedReward
-		self.weights = np.exp(self.eps * self.total_reward)
-		self.total_weight = np.sum(self.weights)
-
-		self.action_prob = ((1.0 - self.eps) * self.weights / self.total_weight) + (self.eps / self.num_actions)
 
 
 

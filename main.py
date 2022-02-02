@@ -1,6 +1,5 @@
 import argparse,time,os,pickle
 import numpy as np
-import os
 
 from player import *
 from env import *
@@ -18,13 +17,12 @@ if __name__ == '__main__':
 	parser.add_argument('--environment', type=int, default=0, help='environments: ' + describe(env_choice_names) )
 	parser.add_argument('--num_players', type=int, default=2, help='number of players ' )
 	parser.add_argument('--num_actions', type=int, help='number of actions ')
-	parser.add_argument('--unit', type=float, default=None, help='discretized unit')
+	parser.add_argument('--unit', type=float, default=1, help='discretized unit')
 	parser.add_argument('--minx', type=float, default=0, help='min action')
 	parser.add_argument('--samples', type=int, default=100, help='number of samples to save' )
 	parser.add_argument('--new', default=False, action='store_true', help='whether to generate a new env instance')
 	parser.add_argument('--num_repeat', type=int, default=1, help='number of repeated simulation')
 	parser.add_argument('--use', type=int, default=-1, help='use a specified env instance, use -1 for the latest instance')
-	parser.add_argument('--values', type=int, nargs='+', default=None, help='space separated sequence of integer valuations, range [0, num_actions), size num_players')
 
 	args = parser.parse_args()
 
@@ -35,11 +33,10 @@ if __name__ == '__main__':
 	num_players = args.num_players
 	num_actions = args.num_actions
 
-	unit = (1.0/num_actions) if (args.unit is None) else args.unit
+	unit = args.unit
 	minx = args.minx
 
 	samples = args.samples
-	values = np.array(args.values)
 
 
 	env_choice = args.environment
@@ -48,19 +45,18 @@ if __name__ == '__main__':
 
 	j = 0
 	while j < args.num_repeat:
-		# log_dir = f'results/{env_name}/{strategy_name}'
-		log_dir = os.path.join("results", env_name, strategy_name)
+		log_dir = f'results/{env_name}/{strategy_name}'
 		if not os.path.exists(log_dir):
 		    os.makedirs(log_dir)
 		    print("created directory")
 		else:
 			print("existing directory")
 
-		prefix = os.path.join("results", env_name, str(num_actions)+"_"+str(num_players)+"_"+str(std)+"_"+str(unit)+"_"+str(minx))
+		prefix = f'results/{env_name}/{num_actions}_{num_players}|{std}|{unit}|{minx}#'
 		i = find_latest(prefix, '.pickle')
 		if args.new or i==0: ### create new environment instance 
 			env_module = __import__('env')
-			env = getattr(env_module, env_name)(std, num_actions,num_players, unit, minx, values=values)
+			env = getattr(env_module, env_name)(std, num_actions,num_players, unit, minx)
 
 			env_dir = prefix + str(i) + '.pickle' 
 			f = open(env_dir, 'wb')
@@ -85,10 +81,10 @@ if __name__ == '__main__':
 		player_module = __import__('player')
 		players = [getattr(player_module, strategy_name)(num_actions, num_iterations) for i in range(num_players) ]
 	    
-		i = find_latest(os.path.join(log_dir,), ".log")
-		log_dir = os.path.join(log_dir, str(i))
+		i = find_latest(f'{log_dir}/', '.log')
+		log_dir = f'{log_dir}/{i}'
 
-		L = logger(log_dir, env, num_iterations, samples=samples, player=strategy_name)
+		L = logger(log_dir, env, num_iterations, samples=samples)
 		start = time.time()
 		L.write(f"iterations: {num_iterations}\n")
 		L.write(f"Environment:\n\t{env}\n")
