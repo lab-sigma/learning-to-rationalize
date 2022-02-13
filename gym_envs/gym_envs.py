@@ -19,12 +19,12 @@ def general_render(env):
 
   for round in env.profile_history:
     round_PoE = 0;
-    for strategy in round:
-      for i in range(len(strategy)):
+    for i, action_profile in enumerate(round):
+      for j, action_prob in enumerate(action_profile):
         delta_i = None
         if env.name == "DIR":
-          delta_i = 2*env.mapping[i]-1
-        round_PoE += strategy[i]*(delta_i/L0)
+          delta_i = 2*env.mappings[i][j]-1
+        round_PoE += action_prob*(delta_i/L0)
     PoE.append(round_PoE/len(round))
 
   fig = plt.figure()
@@ -49,7 +49,7 @@ def general_render(env):
     line.set_data(x, y)
     return line,
 
-  anim = FuncAnimation(fig, animate, init_func=init, frames=range(0, len(env.profile_history), 1000), interval=1, blit=True)
+  anim = FuncAnimation(fig, animate, init_func=init, frames=range(0, len(env.profile_history), len(env.profile_history)//100), interval=1, blit=True)
 
   anim.save('DIR.gif', writer=PillowWriter(fps=10))
 
@@ -66,8 +66,11 @@ class DIR(gym.Env):
     self.action = spaces.Discrete(num_actions)
     self.c = c if c != None else num_actions*2
     self.rho = max(self.c, self.num_actions)
+    self.mappings = []
+    for i in range(num_players):
+      self.mappings.append(np.random.permutation(num_actions))
     self.mapping = np.random.permutation(num_actions)
-    print("Equilibrium action: " + str(self.mapping[num_actions-1]))
+    print(f"Equilibrium actions: {self.mappings[0][num_actions-1]}, {self.mappings[1][num_actions-1]}")
     self.profile_history = []
     self.name = "DIR"
 
@@ -76,8 +79,10 @@ class DIR(gym.Env):
     j = np.random.choice(range(self.num_actions), p=actions[1])
     self.profile_history.append(actions)
     taken_actions = [i, j]
-    i = self.mapping[i]
-    j = self.mapping[j]
+    i = self.mappings[0][i]
+    j = self.mappings[1][j]
+    #i = self.mapping[i]
+    #j = self.mapping[j]
     rewards = np.zeros(2, dtype=float)
     if i <= j+1:
       rewards[0] = i/self.rho
@@ -88,8 +93,6 @@ class DIR(gym.Env):
     else:
       rewards[1] = -self.c/self.rho
     rewards += np.random.randn(2) * self.std
-    done = bool(actions[0][self.mapping[self.num_actions-1]] == 1 or actions[1][self.mapping[self.num_actions-1]] == 1)
-    #self.render()
     return rewards, taken_actions
 
   def reset(self):
