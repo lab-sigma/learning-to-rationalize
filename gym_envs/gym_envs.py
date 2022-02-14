@@ -15,7 +15,7 @@ def compute_PoE(env):
   name = env.name
   PoE = []
   print_check = True
-  #"Round" here corresponds to the set of action_profiles for each agent on a given round
+  #"Round" here corresponds to the set of action profiles for each agent on a given round
   for round in env.profile_history:
     #This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
     if env.name == "Lemon":
@@ -36,6 +36,9 @@ def compute_PoE(env):
               Lambda_i = 2*env.mappings[agent][action]
             else:
               Lambda_i = 2*env.mappings[agent][action] + 1
+              #Edge case to ensure that Lambda_{n-1} = 2*num_actions
+              if env.mappings[agent][action] == env.num_actions-1:
+                Lambda_i = 2*(env.num_actions-1)
           round_PoE += action_prob*(Lambda_i/L0)
       if round_PoE/env.num_players > 1 and print_check:
         print(round_PoE/env.num_players)
