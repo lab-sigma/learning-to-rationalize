@@ -11,21 +11,41 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 import sys
 matplotlib.use('agg')
 
+def compute_PoE(env):
+  name = env.name
+  PoE = []
+  print_check = True
+  #"Round" here corresponds to the set of action_profiles for each agent on a given round
+  for round in env.profile_history:
+    #This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
+    if env.name == "Lemon":
+      round_PoE = 0
+      for agent, action_profile in enumerate(round[1:]):
+        for action, action_prob in enumerate(action_profile):
+          round_PoE += env.mappings[agent][1]
+      PoE.append(round_PoE/env.num_sellers)
+    #This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
+    if env.name == "DIR":
+      L0 = 2*env.num_actions - 2
+      round_PoE = 0
+      for agent, action_profile in enumerate(round):
+        for action, action_prob in enumerate(action_profile):
+          delta_i = None
+          if env.name == "DIR":
+            if agent == 0:
+              Lambda_i = 2*env.mappings[agent][action]
+            else:
+              Lambda_i = 2*env.mappings[agent][action] + 1
+          round_PoE += action_prob*(Lambda_i/L0)
+      if round_PoE/env.num_players > 1 and print_check:
+        print(round_PoE/env.num_players)
+        print_check = False
+      PoE.append(round_PoE/env.num_players)
+  return PoE
 
 def general_render(env):
-  L0 = 2*action_num - 1
 
-  PoE = []
-
-  for round in env.profile_history:
-    round_PoE = 0;
-    for i, action_profile in enumerate(round):
-      for j, action_prob in enumerate(action_profile):
-        delta_i = None
-        if env.name == "DIR":
-          delta_i = 2*env.mappings[i][j]-1
-        round_PoE += action_prob*(delta_i/L0)
-    PoE.append(round_PoE/len(round))
+  PoE = compute_PoE(env)
 
   fig = plt.figure()
   ax = plt.axes(xlim=(0, len(env.profile_history)), ylim=(0, 1))
@@ -51,7 +71,7 @@ def general_render(env):
 
   anim = FuncAnimation(fig, animate, init_func=init, frames=range(0, len(env.profile_history), len(env.profile_history)//100), interval=1, blit=True)
 
-  anim.save('DIR.gif', writer=PillowWriter(fps=10))
+  anim.save(f'{env.name}({env.num_actions}, {env.num_players})_for_{len(env.profile_history)}.gif', writer=PillowWriter(fps=10))
 
   plt.close()
 
@@ -63,26 +83,28 @@ class DIR(gym.Env):
     self.std = std
     self.num_players = num_players
     self.num_actions = num_actions
-    self.action = spaces.Discrete(num_actions)
     self.c = c if c != None else num_actions*2
     self.rho = max(self.c, self.num_actions)
     self.mappings = []
+    #mappings represents the random permutations of the action space for each agent to ensure the equilibrium is different on each run
     for i in range(num_players):
       self.mappings.append(np.random.permutation(num_actions))
     self.mapping = np.random.permutation(num_actions)
     print(f"Equilibrium actions: {self.mappings[0][num_actions-1]}, {self.mappings[1][num_actions-1]}")
+    #profile_history stores the set of action profiles for each agent
     self.profile_history = []
     self.name = "DIR"
 
   def step(self, actions):
+    #randomly choose an action based on the set of action profiles for each agent
     i = np.random.choice(range(self.num_actions), p=actions[0])
     j = np.random.choice(range(self.num_actions), p=actions[1])
+    #save the set of action profiles to profile_history
     self.profile_history.append(actions)
     taken_actions = [i, j]
+    #randomly map the chosen actions
     i = self.mappings[0][i]
     j = self.mappings[1][j]
-    #i = self.mapping[i]
-    #j = self.mapping[j]
     rewards = np.zeros(2, dtype=float)
     if i <= j+1:
       rewards[0] = i/self.rho
@@ -143,6 +165,7 @@ class SPA(gym.Env):
     pass
 
 class Lemon(gym.Env):
+  #For PoE calculation, add up probability of selling for each agent divided by the number of agents that are selling
   metadata = {'render.modes': ['human']}
   def __init__(self, std, num_sellers, num_actions, unit, minx):
     self.std = std
@@ -155,24 +178,42 @@ class Lemon(gym.Env):
     self.welfare_factor = 1.5
     self.listing_cost = 3
     self.profile_history = []
-    env.name = "Lemon"
+    #mappings represents the random permutations of the action space for each agent to ensure the equilibrium is different on each run
+    self.mappings = []
+    for i in range(self.num_players):
+      self.mappings.append(np.random.permutation(2))
+    #set mapping for buyer to be different from that of sellers
+    self.mappings[0] = np.random.permutation(num_actions)
+    #profile_history stores the set of action profiles for each agent
+    self.mapping = np.random.permutation(num_actions)
+    self.name = "Lemon"
 
   def transform(self, x):
     return x*self.unit + self.minx
 
-  def step(self, actions):
-    self.profile_history.append(actions)
-    taken_actions = []
-    for i in range(len(actions)):
-      taken_actions.append(np.random.choice(range(self.num_actions), p=actions[i]))
+  def step(self, action_profiles):
+    self.profile_history.append(action_profiles)
+    actions = []
+    mapped_actions = []
 
-    actions = np.asarray(taken_actions)
+
+    actions.append(np.random.choice(range(self.num_actions), p=action_profiles[0]))
+    for i, action_profile in enumerate(action_profiles[1:]):
+      actions.append(np.random.choice(range(2), p=action_profile))
+
+    taken_actions = actions
+
+    #swap action to randomly mapped action
+    for i, action in enumerate(actions):
+      actions[i] = self.mappings[i][action]
+
+    actions = np.asarray(actions)
     rewards = np.zeros(self.num_players)
     seller_actions = actions[1:]
-    price =  self.transform( actions[0] ) - 1 
+    price =  self.transform(actions[0]) - 1 
 
     sold = seller_actions * (self.quality < price) ### quality below price and is selling
-    supply = np.sum(sold) 
+    supply = np.sum(sold)
     if supply > 0:
       avg_quality = np.sum(sold * self.quality) / supply
       q_noise = np.random.randn(self.num_sellers) * 5
@@ -194,7 +235,7 @@ class Lemon(gym.Env):
     pass
 
   def render(self):
-    pass
+    general_render(self)
 
 
 # repeated first price auction
