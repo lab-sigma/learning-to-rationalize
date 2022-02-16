@@ -23,7 +23,7 @@ def compute_PoE(env):
       for agent, action_profile in enumerate(round[1:]):
         if round_num % 100 == 0:
           print(f"Action profile for agent {agent+1}: {action_profile}")
-        round_PoE += action_profile[env.mappings[agent+1][1]]
+        round_PoE += action_profile[env.mappings[agent+1][0]]
       PoE.append(round_PoE/env.num_sellers)
       if round_num % 100 == 0:
         print(f"Total PoE: {round_PoE/env.num_sellers}")
@@ -195,7 +195,6 @@ class Lemon(gym.Env):
     #set mapping for buyer to be different from that of sellers
     self.mappings[0] = np.random.permutation(num_actions)
     #profile_history stores the set of action profiles for each agent
-    self.mapping = np.random.permutation(num_actions)
     self.name = "Lemon"
 
   def transform(self, x):
@@ -204,14 +203,13 @@ class Lemon(gym.Env):
   def step(self, action_profiles):
     self.profile_history.append(action_profiles)
     actions = []
-    mapped_actions = []
 
-
+    #choose actions randomly from action_profile
     actions.append(np.random.choice(range(self.num_actions), p=action_profiles[0]))
     for i, action_profile in enumerate(action_profiles[1:]):
       actions.append(np.random.choice(range(2), p=action_profile))
 
-    taken_actions = actions
+    taken_actions = actions.copy()
 
     #swap action to randomly mapped action
     for i, action in enumerate(actions):
