@@ -33,7 +33,7 @@ def run_env(env, num_iterations):
   for i in range(env.num_players):
     print("Agent ", i, "'s final distribution over actions: ", agents[i].action_prob.astype(float))
 
-num_iterations = 10000
+num_iterations = 100000
 action_num = 24
 player_num = 25
 #env = DIR(num_actions=action_num, std = .1, num_players=2)

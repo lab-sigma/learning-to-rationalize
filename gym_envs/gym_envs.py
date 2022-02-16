@@ -22,8 +22,8 @@ def compute_PoE(env):
       round_PoE = 0
       for agent, action_profile in enumerate(round[1:]):
         if round_num % 100 == 0:
-          print(f"Action profile for agent {agent}: {action_profile}")
-        round_PoE += env.mappings[agent][1]
+          print(f"Action profile for agent {agent+1}: {action_profile}")
+        round_PoE += action_profile[env.mappings[agent+1][1]]
       PoE.append(round_PoE/env.num_sellers)
       if round_num % 100 == 0:
         print(f"Total PoE: {round_PoE/env.num_sellers}")
