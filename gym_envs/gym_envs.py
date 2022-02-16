@@ -16,14 +16,17 @@ def compute_PoE(env):
   PoE = []
   print_check = True
   #"Round" here corresponds to the set of action profiles for each agent on a given round
-  for round in env.profile_history:
+  for round_num, round in enumerate(env.profile_history):
     #This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
     if env.name == "Lemon":
       round_PoE = 0
       for agent, action_profile in enumerate(round[1:]):
-        for action, action_prob in enumerate(action_profile):
-          round_PoE += env.mappings[agent][1]
+        if round_num % 100 == 0:
+          print(f"Action profile for agent {agent}: {action_profile}")
+        round_PoE += env.mappings[agent][1]
       PoE.append(round_PoE/env.num_sellers)
+      if round_num % 100 == 0:
+        print(f"Total PoE: {round_PoE/env.num_sellers}")
     #This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
     if env.name == "DIR":
       L0 = 2*env.num_actions - 2
@@ -40,6 +43,10 @@ def compute_PoE(env):
               if env.mappings[agent][action] == env.num_actions-1:
                 Lambda_i = 2*(env.num_actions-1)
           round_PoE += action_prob*(Lambda_i/L0)
+      if round_num % 100000 == 0:
+        print(f"Agent 0's action profile: {env.profile_history[round_num][0]} for round {round_num}")
+        print(f"Agent 1's action profile: {env.profile_history[round_num][1]} for round {round_num}")
+        print(f"Round PoE: {round_PoE/env.num_players}")
       if round_PoE/env.num_players > 1 and print_check:
         print(round_PoE/env.num_players)
         print_check = False
@@ -139,7 +146,7 @@ class SPA(gym.Env):
     ### randomly sample values for players and wlog rank players by its value 
     self.values = minx + np.sort( np.random.choice(num_actions, num_players) )*unit
     self.profile_history = []
-    env.name = "SPA"
+    self.name = "SPA"
   
   def transform_action(self, actions):
     return self.minx + actions*self.unit ### to linearly map an action id to a real value

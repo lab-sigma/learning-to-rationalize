@@ -33,12 +33,12 @@ def run_env(env, num_iterations):
   for i in range(env.num_players):
     print("Agent ", i, "'s final distribution over actions: ", agents[i].action_prob.astype(float))
 
-num_iterations = 10000000
-action_num = 5
-player_num = 2
-env = DIR(num_actions=action_num, std = .1, num_players=2)
+num_iterations = 10000
+action_num = 24
+player_num = 25
+#env = DIR(num_actions=action_num, std = .1, num_players=2)
 #env = SPA(num_actions=action_num, std = .1, num_players=player_num, unit = .05, minx = 0)
-#env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
+env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
 agents = []
 
 run_env(env, num_iterations)
