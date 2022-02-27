@@ -17,7 +17,10 @@ def compute_PoE(env):
   print_check = True
   #"Round" here corresponds to the set of action profiles for each agent on a given round
   for round_num, round in enumerate(env.profile_history):
-    #This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
+    # This calculates the PoE for a Single Elimination Game
+    if env.name == "Single":
+      pass
+    # This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
     if env.name == "Lemon":
       round_PoE = 0
       for agent, action_profile in enumerate(round[1:]):
@@ -27,7 +30,7 @@ def compute_PoE(env):
       PoE.append(round_PoE/env.num_sellers)
       if round_num % 100 == 0:
         print(f"Total PoE: {round_PoE/env.num_sellers}")
-    #This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
+    # This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
     if env.name == "DIR":
       L0 = 2*env.num_actions - 2
       round_PoE = 0
@@ -38,7 +41,7 @@ def compute_PoE(env):
             Lambda_i = 2*env.mappings[agent][action]
           else:
             Lambda_i = 2*env.mappings[agent][action] + 1
-            #Edge case to ensure that Lambda_{n-1} = 2*num_actions
+            # Edge case to ensure that Lambda_{n-1} = 2*num_actions
             if env.mappings[agent][action] == env.num_actions-1:
               Lambda_i = 2*(env.num_actions-1)
           round_PoE += action_prob*(Lambda_i/L0)
@@ -294,3 +297,41 @@ class FPA(gym.Env):
 
   def reset(self):
     pass
+
+
+class Single(gym.Env):
+  metadata = {'render.modes': ['human']}
+  def __init__(self, std, num_actions, unit, minx):
+    self.std = std
+    self.unit = unit
+    self.minx = minx
+    self.num_players = 1
+    self.num_actions = num_actions
+    self.profile_history = []  # profile_history stores the set of action profiles for each agent
+    self.reward_history = []
+    self.name = "Single"
+
+  def transform(self, x):
+    return x*self.unit + self.minx
+
+  def step(self, action_profiles):
+    self.profile_history.append(action_profiles)
+
+    # choose actions randomly from action_profile
+    action = np.random.choice(range(self.num_actions), p=action_profiles[0])
+    taken_actions = np.asarray([action])
+
+    reward = np.random.randn()  # oblivious
+
+    # 2nd part is the average probability the agent gave this action in previous 10 rounds
+    reward = np.random.randn() - np.mean(self.profile_history[-10:], axis=0)[0][action]  # targeted
+
+    rewards = np.asarray([reward])
+
+    return rewards, taken_actions
+
+  def reset(self):
+    pass
+
+  def render(self):
+    general_render(self)
