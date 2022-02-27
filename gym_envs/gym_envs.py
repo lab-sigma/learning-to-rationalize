@@ -34,14 +34,13 @@ def compute_PoE(env):
       for agent, action_profile in enumerate(round):
         for action, action_prob in enumerate(action_profile):
           delta_i = None
-          if env.name == "DIR":
-            if agent == 0:
-              Lambda_i = 2*env.mappings[agent][action]
-            else:
-              Lambda_i = 2*env.mappings[agent][action] + 1
-              #Edge case to ensure that Lambda_{n-1} = 2*num_actions
-              if env.mappings[agent][action] == env.num_actions-1:
-                Lambda_i = 2*(env.num_actions-1)
+          if agent == 0:
+            Lambda_i = 2*env.mappings[agent][action]
+          else:
+            Lambda_i = 2*env.mappings[agent][action] + 1
+            #Edge case to ensure that Lambda_{n-1} = 2*num_actions
+            if env.mappings[agent][action] == env.num_actions-1:
+              Lambda_i = 2*(env.num_actions-1)
           round_PoE += action_prob*(Lambda_i/L0)
       if round_num % 100000 == 0:
         print(f"Agent 0's action profile: {env.profile_history[round_num][0]} for round {round_num}")
@@ -259,6 +258,7 @@ class FPA(gym.Env):
     ### randomly sample values for players and wlog rank players by its value
     self.values = minx + np.sort( np.random.choice(num_actions, num_players) if (values is None) else values )*unit
     self.profile_history = []
+    self.name = "FPA"
 
   def transform_action(self, actions):
     return self.minx + actions * self.unit  ### to linearly map an action id to a real value
