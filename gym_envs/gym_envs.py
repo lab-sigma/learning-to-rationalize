@@ -12,14 +12,17 @@ import sys
 matplotlib.use('agg')
 
 def compute_PoE(env):
-  name = env.name
   PoE = []
   print_check = True
   #"Round" here corresponds to the set of action profiles for each agent on a given round
   for round_num, round in enumerate(env.profile_history):
     # This calculates the PoE for a Single Elimination Game
     if env.name == "Single":
-      pass
+      # round = [[agent's action probabilities]]
+      avg_reward = np.average(np.array(env.reward_history[round_num-9:round_num+1]), axis=0)
+      regret = 1/avg_reward
+      round_success = 1 - regret
+      PoE.append(round_success)
     # This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
     if env.name == "Lemon":
       round_PoE = 0
@@ -308,7 +311,7 @@ class Single(gym.Env):
     self.num_players = 1
     self.num_actions = num_actions
     self.profile_history = []  # profile_history stores the set of action profiles for each agent
-    self.reward_history = []
+    self.reward_history = []  # contains tuples for (action, reward)
     self.name = "Single"
 
   def transform(self, x):
@@ -325,6 +328,8 @@ class Single(gym.Env):
 
     # 2nd part is the average probability the agent gave this action in previous 10 rounds
     reward = np.random.randn() - np.mean(self.profile_history[-10:], axis=0)[0][action]  # targeted
+
+    self.reward_history.append((action, reward))
 
     rewards = np.asarray([reward])
 
