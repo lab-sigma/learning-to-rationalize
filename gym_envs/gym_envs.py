@@ -51,24 +51,27 @@ def compute_PoE(env):
         print(round_PoE/env.num_players)
         print_check = False
       PoE.append(round_PoE/env.num_players)
-    if env.name == "Single":
-      return env.regret_history
 
   return PoE
 
 def general_render(env):
 
-  PoE = compute_PoE(env)
-
   fig = plt.figure()
   ax = plt.axes(xlim=(0, len(env.profile_history)), ylim=(0, 1))
-
   ax.set_xlabel('Round Number')
-  ax.set_ylabel('Progress of Elimination')
-  if env.name == "DIR":
-    ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.c})')
+
+  if env.num_players == 1:
+    PoE = env.regret_history
+    ax.set_ylabel('Average Regret')
+    ax.set_title(f'Average Regret in {env.name}')
   else:
-    ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.num_players})')
+    PoE = compute_PoE(env)
+
+    ax.set_ylabel('Progress of Elimination')
+    if env.name == "DIR":
+      ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.c})')
+    else:
+      ax.set_title(f'Progress of Elimination for {env.name}({env.num_actions}, {env.num_players})')
 
   line, = ax.plot([], [], lw = 1)
 
@@ -299,10 +302,10 @@ class FPA(gym.Env):
     pass
 
 
-
-class Single(gym.Env):
+### single agent Adversarial environment
+class ADV(gym.Env):
   metadata = {'render.modes': ['human']}
-  def __init__(self, std, num_actions, unit, minx):
+  def __init__(self, std, num_actions, unit, minx, mode=0):
     self.std = std
     self.unit = unit
     self.minx = minx
@@ -312,7 +315,11 @@ class Single(gym.Env):
     self.regret_history = []  
     self.avg_reward = np.zeros(num_actions) ### average reward of each arms
     self.cum_reward = 0 ### avg reward of the learning algorithm
-    self.name = "Single"
+    self.mode = mode
+    if self.mode == 0:
+      self.name = "Oblivious Adversary"
+    elif self.mode == 1:
+      self.name = "Non-Oblivious Adversary"
 
   def transform(self, x):
     return x*self.unit + self.minx
@@ -324,7 +331,16 @@ class Single(gym.Env):
     action = np.random.choice(range(self.num_actions), p=action_profiles[0])
 
     # vector of reward
-    reward = np.random.randn(self.num_actions) 
+    if self.mode == 0:
+      reward = np.random.randn(self.num_actions) 
+    elif self.mode == 1:
+      reward = np.zeros(self.num_actions) 
+      if action_profiles[0][0] > action_profiles[0][1]:
+        reward[0] = 0
+        reward[1] = 1
+      else:
+        reward[0] = 1
+        reward[1] = 0
 
     t = len(self.profile_history)
 

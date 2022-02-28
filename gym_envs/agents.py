@@ -1,12 +1,13 @@
 import numpy as np
+import math
 
 class EXP3:
 	def __init__(self, num_actions, num_iterations=None):
 		self.num_actions = num_actions
-		self.belief = np.ones(num_actions, dtype=longdouble)
+		self.belief = np.ones(num_actions, dtype=np.longdouble)
 		self.belief /= sum(self.belief)
 		self.gamma = 0
-		self.action_prob = np.ones(num_actions, dtype=longdouble) / num_actions
+		self.action_prob = np.ones(num_actions, dtype=np.longdouble) / num_actions
 		self.t = 0
 
 	def __str__(self):

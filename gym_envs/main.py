@@ -9,18 +9,19 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from gym_envs import *
-from agents import EXP3DH
+from agents import *
 
 def run_env(env, num_iterations):
   agents = []
   for i in range(env.num_players):
-    if env.name == "DIR" or "Single":
-      agents.append(EXP3DH(env.num_actions))
+    # if env.name == "DIR" or "Single":      
     if env.name == "Lemon":
       if i == 0:
         agents.append(EXP3DH(env.num_actions))
       else:
         agents.append(EXP3DH(2))
+    else:
+      agents.append(EXP3DH(env.num_actions))
 
   for t in range(num_iterations):
     actions = []
@@ -40,7 +41,7 @@ num_iterations = 1000
 #env = SPA(num_actions=action_num, std = .1, num_players=player_num, unit = .05, minx = 0)
 # env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
 # agents = []
-env = Single(std=.1, num_actions=10, unit=.1, minx=0)
+env = ADV(std=.1, num_actions=10, unit=.1, minx=0, mode=1)
 
 run_env(env, num_iterations)
 
