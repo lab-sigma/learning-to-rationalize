@@ -51,6 +51,9 @@ def compute_PoE(env):
         print(round_PoE/env.num_players)
         print_check = False
       PoE.append(round_PoE/env.num_players)
+    if env.name == "Single":
+      return env.regret_history
+
   return PoE
 
 def general_render(env):
@@ -294,3 +297,50 @@ class FPA(gym.Env):
 
   def reset(self):
     pass
+
+
+
+class Single(gym.Env):
+  metadata = {'render.modes': ['human']}
+  def __init__(self, std, num_actions, unit, minx):
+    self.std = std
+    self.unit = unit
+    self.minx = minx
+    self.num_players = 1
+    self.num_actions = num_actions
+    self.profile_history = []  # profile_history stores the set of action profiles for each agent
+    self.regret_history = []  
+    self.avg_reward = np.zeros(num_actions) ### average reward of each arms
+    self.cum_reward = 0 ### avg reward of the learning algorithm
+    self.name = "Single"
+
+  def transform(self, x):
+    return x*self.unit + self.minx
+
+  def step(self, action_profiles):
+    self.profile_history.append(action_profiles)
+
+    # choose actions randomly from action_profile
+    action = np.random.choice(range(self.num_actions), p=action_profiles[0])
+
+    # vector of reward
+    reward = np.random.randn(self.num_actions) 
+
+    t = len(self.profile_history)
+
+    self.cum_reward = (self.cum_reward * ((t-1)/t) + reward[action]/t) ## to prevent overflow
+    self.avg_reward = (self.avg_reward * ((t-1)/t) + reward/t) ## to prevent overflow
+    
+    regret = np.max(self.avg_reward) - self.cum_reward 
+    self.regret_history.append(regret)
+
+    rewards = np.asarray([reward[action]])
+    taken_actions = np.asarray([action])
+
+    return rewards, taken_actions
+
+  def reset(self):
+    pass
+
+  def render(self):
+    general_render(self)

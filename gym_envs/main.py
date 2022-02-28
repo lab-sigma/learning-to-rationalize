@@ -8,13 +8,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from gym_envs import DIR, SPA, Lemon
+from gym_envs import *
 from agents import EXP3DH
 
 def run_env(env, num_iterations):
   agents = []
   for i in range(env.num_players):
-    if env.name == "DIR":
+    if env.name == "DIR" or "Single":
       agents.append(EXP3DH(env.num_actions))
     if env.name == "Lemon":
       if i == 0:
@@ -33,13 +33,14 @@ def run_env(env, num_iterations):
   for i in range(env.num_players):
     print("Agent ", i, "'s final distribution over actions: ", agents[i].action_prob.astype(float))
 
-num_iterations = 100000
-action_num = 24
-player_num = 25
+num_iterations = 1000
+# action_num = 24
+# player_num = 25
 #env = DIR(num_actions=action_num, std = .1, num_players=2)
 #env = SPA(num_actions=action_num, std = .1, num_players=player_num, unit = .05, minx = 0)
-env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
-agents = []
+# env = Lemon(num_actions = action_num, unit = 1, minx = 25, std=.1, num_sellers=player_num-1)
+# agents = []
+env = Single(std=.1, num_actions=10, unit=.1, minx=0)
 
 run_env(env, num_iterations)
 

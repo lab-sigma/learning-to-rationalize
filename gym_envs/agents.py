@@ -1,3 +1,5 @@
+import numpy as np
+
 class EXP3:
 	def __init__(self, num_actions, num_iterations=None):
 		self.num_actions = num_actions
