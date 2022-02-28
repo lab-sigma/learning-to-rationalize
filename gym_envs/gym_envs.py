@@ -12,12 +12,18 @@ import sys
 matplotlib.use('agg')
 
 def compute_PoE(env):
-  name = env.name
   PoE = []
   print_check = True
   #"Round" here corresponds to the set of action profiles for each agent on a given round
   for round_num, round in enumerate(env.profile_history):
-    #This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
+    # This calculates the PoE for a Single Elimination Game
+    if env.name == "Single":
+      # round = [[agent's action probabilities]]
+      avg_reward = np.average(np.array(env.reward_history[round_num-9:round_num+1]), axis=0)
+      regret = 1/avg_reward
+      round_success = 1 - regret
+      PoE.append(round_success)
+    # This calculates the PoE for the Market for Lemons game by simply adding up the probabilities for each seller of selling
     if env.name == "Lemon":
       round_PoE = 0
       for agent, action_profile in enumerate(round[1:]):
@@ -27,21 +33,20 @@ def compute_PoE(env):
       PoE.append(round_PoE/env.num_sellers)
       if round_num % 100 == 0:
         print(f"Total PoE: {round_PoE/env.num_sellers}")
-    #This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
+    # This calculates the PoE for the DIR game by implementing the formula seen on page 12 of https://arxiv.org/pdf/2111.05486.pdf
     if env.name == "DIR":
       L0 = 2*env.num_actions - 2
       round_PoE = 0
       for agent, action_profile in enumerate(round):
         for action, action_prob in enumerate(action_profile):
           delta_i = None
-          if env.name == "DIR":
-            if agent == 0:
-              Lambda_i = 2*env.mappings[agent][action]
-            else:
-              Lambda_i = 2*env.mappings[agent][action] + 1
-              #Edge case to ensure that Lambda_{n-1} = 2*num_actions
-              if env.mappings[agent][action] == env.num_actions-1:
-                Lambda_i = 2*(env.num_actions-1)
+          if agent == 0:
+            Lambda_i = 2*env.mappings[agent][action]
+          else:
+            Lambda_i = 2*env.mappings[agent][action] + 1
+            # Edge case to ensure that Lambda_{n-1} = 2*num_actions
+            if env.mappings[agent][action] == env.num_actions-1:
+              Lambda_i = 2*(env.num_actions-1)
           round_PoE += action_prob*(Lambda_i/L0)
       if round_num % 100000 == 0:
         print(f"Agent 0's action profile: {env.profile_history[round_num][0]} for round {round_num}")
@@ -259,6 +264,7 @@ class FPA(gym.Env):
     ### randomly sample values for players and wlog rank players by its value
     self.values = minx + np.sort( np.random.choice(num_actions, num_players) if (values is None) else values )*unit
     self.profile_history = []
+    self.name = "FPA"
 
   def transform_action(self, actions):
     return self.minx + actions * self.unit  ### to linearly map an action id to a real value
@@ -294,3 +300,43 @@ class FPA(gym.Env):
 
   def reset(self):
     pass
+
+
+class Single(gym.Env):
+  metadata = {'render.modes': ['human']}
+  def __init__(self, std, num_actions, unit, minx):
+    self.std = std
+    self.unit = unit
+    self.minx = minx
+    self.num_players = 1
+    self.num_actions = num_actions
+    self.profile_history = []  # profile_history stores the set of action profiles for each agent
+    self.reward_history = []  # contains tuples for (action, reward)
+    self.name = "Single"
+
+  def transform(self, x):
+    return x*self.unit + self.minx
+
+  def step(self, action_profiles):
+    self.profile_history.append(action_profiles)
+
+    # choose actions randomly from action_profile
+    action = np.random.choice(range(self.num_actions), p=action_profiles[0])
+    taken_actions = np.asarray([action])
+
+    reward = np.random.randn()  # oblivious
+
+    # 2nd part is the average probability the agent gave this action in previous 10 rounds
+    reward = np.random.randn() - np.mean(self.profile_history[-10:], axis=0)[0][action]  # targeted
+
+    self.reward_history.append((action, reward))
+
+    rewards = np.asarray([reward])
+
+    return rewards, taken_actions
+
+  def reset(self):
+    pass
+
+  def render(self):
+    general_render(self)
