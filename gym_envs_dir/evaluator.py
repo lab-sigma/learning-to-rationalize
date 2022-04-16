@@ -1,24 +1,11 @@
 import os
-import gym
-import numpy as np
-from gym import spaces
-import random, math
-import scipy
-from scipy.optimize import minimize_scalar, fsolve
-import matplotlib
-import matplotlib.pyplot as plt
-import networkx as nx
-from matplotlib.animation import FuncAnimation, PillowWriter
-import sys
-from gym_envs.gym_envs import DIR, SPA, Lemon
-from gym_envs.gym_envs import compute_PoE
-from gym_envs.agents import EXP3, EXP3DH, MWUMB
-
-import os
 
 from aicrowd_gym.servers.zmq_oracle_server import ZmqOracleServer
 from aicrowd_gym.serializers import MessagePackSerializer
 from loguru import logger
+from gym_envs import DIR, SPA, Lemon
+from gym_envs import general_render, compute_PoE
+from agents import EXP3, EXP3DH
 import logging
 
 logging.disable('DEBUG')
@@ -82,8 +69,7 @@ class AIcrowdEvaluator:
     for t in range(self.num_iterations):
       actions = []
       for i in range(self.env.num_players):
-        request_id = agents[i].execute("compute_action")
-        action = agents[i].get_response(request_id, timeout=1000).astype('float64')
+        action = agents[i].compute_action().astype('float64')
         actions.append(action)
       
       rewards, taken_actions = self.env.step(actions)
@@ -94,6 +80,7 @@ class AIcrowdEvaluator:
     self.server.close_agents()
 
   def evaluate(self):
+    general_render(self.env)
     return {
         "score": compute_PoE(self.env) 
     }
@@ -105,8 +92,8 @@ if __name__ == "__main__":
 
   env_name = "DIR"
   num_players = 2
-  num_actions = 10
-  num_iterations = 10000
+  num_actions = 5
+  num_iterations = 100
   std = .1
   kwargs = {'env_name': env_name, 'num_players': num_players, 'num_actions': num_actions, 'num_iterations': num_iterations, 'std': std}
   evaluator = AIcrowdEvaluator(kwargs=kwargs)
